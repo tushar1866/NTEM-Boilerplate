@@ -8,8 +8,8 @@
   "license": "MIT",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "preserve": "npm run build",
-    "serve": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
+    "predev": "npm run build",
+    "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon -q dist/index.js\"",
     "prestart": "npm run build",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "test": "jest -i --colors --verbose --detectOpenHandles",

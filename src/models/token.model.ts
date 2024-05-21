@@ -4,7 +4,7 @@ import { TokenTypes } from '../config/tokens';
 
 type TokenDocument = Document & {
   token: string;
-  user: ObjectId;
+  userId: ObjectId;
   type: string;
   expires: Date;
   blacklisted: boolean;

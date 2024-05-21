@@ -2,7 +2,7 @@ import mongoose, { Document, Model, ObjectId, Schema } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import { roles } from '../config/roles';
-// import { toJSON, paginate } from './plugins';
+import { toJSON, paginate } from './plugins';
 import { IUser } from '../types/user';
 
 type UserDocument = Document & {
@@ -12,9 +12,15 @@ type UserDocument = Document & {
   password: string;
   role: string;
   isEmailVerified: boolean;
+  isPasswordMatch(password: string): Promise<boolean>;
 };
 
-const UserSchema = new Schema(
+interface UserModel extends Model<UserDocument> {
+  isEmailTaken(email: string, excludeUserId?: ObjectId): Promise<boolean>;
+  paginate: Function;
+}
+
+const UserSchema = new Schema<UserDocument, UserModel>(
   {
     name: {
       type: String,
@@ -58,11 +64,10 @@ const UserSchema = new Schema(
   }
 );
 
-// add plugin that converts mongoose to json
-// UserSchema.plugin(toJSON);
-// UserSchema.plugin(paginate);
+UserSchema.plugin(toJSON);
+UserSchema.plugin(paginate);
 
-UserSchema.statics.isEmailTaken = async function (email: string, excludeUserId?: mongoose.Types.ObjectId): Promise<boolean> {
+UserSchema.statics.isEmailTaken = async function (email: string, excludeUserId?: ObjectId): Promise<boolean> {
   const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
   return !!user;
 };
@@ -71,14 +76,14 @@ UserSchema.methods.isPasswordMatch = async function (this: IUser, password: stri
   return bcrypt.compare(password, this.password);
 };
 
-UserSchema.pre<IUser>('save', async function (next) {
-  const user = this as mongoose.Document & IUser;
+UserSchema.pre<UserDocument>('save', async function (next) {
+  const user = this as UserDocument;
   if (user.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 8);
   }
   next();
 });
 
-const User: Model<UserDocument> = mongoose.model<UserDocument>('User', UserSchema);
+const User: UserModel = mongoose.model<UserDocument, UserModel>('User', UserSchema);
 
 export { User, UserDocument };

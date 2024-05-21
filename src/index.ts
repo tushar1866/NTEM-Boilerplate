@@ -1,6 +1,5 @@
 import { connect } from 'mongoose';
 import { Server } from 'http';
-import { Express } from 'express';
 import app from './app';
 import config from './config/config';
 import logger from './config/logger';
