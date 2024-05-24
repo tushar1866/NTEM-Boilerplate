@@ -1,89 +1,101 @@
-import mongoose, { Document, Model, ObjectId, Schema } from 'mongoose';
+import mongoose, {
+    Document,
+    Model,
+    ObjectId,
+    Schema,
+    HydratedDocument,
+} from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import { roles } from '../config/roles';
-import { toJSON, paginate } from './plugins';
-import { IUser } from '../types/user';
+import toJSON from './plugins/toJSON.plugin';
+import paginate from './plugins/paginate.plugin';
 
-type UserDocument = Document & {
-  _id: ObjectId;
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-  isEmailVerified: boolean;
-  isPasswordMatch(password: string): Promise<boolean>;
-};
-
-interface UserModel extends Model<UserDocument> {
-  isEmailTaken(email: string, excludeUserId?: ObjectId): Promise<boolean>;
-  paginate: Function;
+interface UserDocument extends Document {
+    _id: ObjectId;
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    isEmailVerified: boolean;
+    isPasswordMatch(password: string): Promise<boolean>;
 }
 
-const UserSchema = new Schema<UserDocument, UserModel>(
-  {
+interface UserModel extends Model<UserDocument> {
+    isEmailTaken(email: string, excludeUserId?: ObjectId): Promise<boolean>;
+    paginate: Function;
+}
+
+const userSchemaDefinition = {
     name: {
-      type: String,
-      required: true,
-      trim: true,
+        type: String,
+        required: true,
+        trim: true,
     },
     email: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      lowercase: true,
-      validate: {
-        validator: (value: string) => validator.isEmail(value),
-        message: 'Invalid email',
-      },
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+        lowercase: true,
+        validate: {
+            validator: (value: string) => validator.isEmail(value),
+            message: 'Invalid email',
+        },
     },
     password: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 8,
-      validate: {
-        validator: (value: string) => /\d/.test(value) && /[a-zA-Z]/.test(value),
-        message: 'Password must contain at least one letter and one number',
-      },
-      private: true, // used by the toJSON plugin
+        type: String,
+        required: true,
+        trim: true,
+        minlength: 8,
+        validate: {
+            validator: (value: string) =>
+                /\d/.test(value) && /[a-zA-Z]/.test(value),
+            message: 'Password must contain at least one letter and one number',
+        },
+        private: true, // used by the toJSON plugin
     },
     role: {
-      type: String,
-      enum: roles,
-      default: 'user',
+        type: String,
+        enum: roles,
+        default: 'user',
     },
     isEmailVerified: {
-      type: Boolean,
-      default: false,
+        type: Boolean,
+        default: false,
     },
-  },
-  {
+};
+
+const userSchema = new Schema<UserDocument, UserModel>(userSchemaDefinition, {
     timestamps: true,
-  }
-);
-
-UserSchema.plugin(toJSON);
-UserSchema.plugin(paginate);
-
-UserSchema.statics.isEmailTaken = async function (email: string, excludeUserId?: ObjectId): Promise<boolean> {
-  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
-  return !!user;
-};
-
-UserSchema.methods.isPasswordMatch = async function (this: IUser, password: string): Promise<boolean> {
-  return bcrypt.compare(password, this.password);
-};
-
-UserSchema.pre<UserDocument>('save', async function (next) {
-  const user = this as UserDocument;
-  if (user.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 8);
-  }
-  next();
 });
 
-const User: UserModel = mongoose.model<UserDocument, UserModel>('User', UserSchema);
+userSchema.plugin(toJSON);
+userSchema.plugin(paginate);
+
+userSchema.statics.isEmailTaken = async function (
+    email: string,
+    excludeUserId?: ObjectId
+): Promise<boolean> {
+    const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+    return !!user;
+};
+
+userSchema.methods.isPasswordMatch = async function (
+    this: HydratedDocument<UserDocument>,
+    password: string
+): Promise<boolean> {
+    return bcrypt.compare(password, this.password);
+};
+
+userSchema.pre('save', async function (next) {
+    const user = this as HydratedDocument<UserDocument>;
+    if (user.isModified('password')) {
+        user.password = await bcrypt.hash(user.password, 8);
+    }
+    next();
+});
+
+const User = mongoose.model<UserDocument, UserModel>('User', userSchema);
 
 export { User, UserDocument };

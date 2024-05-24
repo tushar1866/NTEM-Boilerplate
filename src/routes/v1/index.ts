@@ -7,14 +7,14 @@ import userRoute from './user.route';
 const router: Router = express.Router();
 
 const defaultRoutes = [
-  {
-    path: '/auth',
-    route: authRoute,
-  },
-  {
-    path: '/users',
-    route: userRoute,
-  },
+    {
+        path: '/auth',
+        route: authRoute,
+    },
+    {
+        path: '/users',
+        route: userRoute,
+    },
 ];
 
 // const devRoutes = [
@@ -31,7 +31,7 @@ const defaultRoutes = [
 // }
 
 defaultRoutes.forEach((route) => {
-  router.use(route.path, route.route);
+    router.use(route.path, route.route);
 });
 
 export default router;
