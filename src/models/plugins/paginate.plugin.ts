@@ -42,7 +42,6 @@ function paginate<T extends Document>(schema: Schema<T>) {
             .sort(sort)
             .skip(skip)
             .limit(limit);
-
         if (populate) {
             populate.split(',').forEach((populateOption) => {
                 docsPromise = docsPromise.populate(populateOption);

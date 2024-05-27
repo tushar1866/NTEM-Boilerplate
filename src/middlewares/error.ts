@@ -11,7 +11,6 @@ const errorHandler = (
     res: Response,
     next: NextFunction
 ) => {
-    console.log('MAIN ERROR', err);
     if (err instanceof ApiError) {
         let { statusCode, message } = err;
         if (config.env === 'production' && !err.isOperational) {

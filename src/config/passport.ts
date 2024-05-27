@@ -23,7 +23,7 @@ const jwtVerify: VerifyCallback = async (
         if (payload.type !== TokenTypes.ACCESS) {
             throw new Error('Invalid token type');
         }
-        const user = await User.findById(payload._id);
+        const user = await User.findById(payload.sub);
         if (!user) {
             return done(new Error('User not found'), false);
         }

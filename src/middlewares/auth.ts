@@ -3,12 +3,15 @@ import httpStatus from 'http-status';
 import ApiError from '../utils/ApiError';
 import { roleRights } from '../config/roles';
 import { NextFunction, Request, Response } from 'express';
+import { TokenExpiredError } from 'jsonwebtoken';
 
 const verifyCallback =
     (req: Request, requiredRights: string[]): passport.AuthenticateCallback =>
     async (err: Error, user: any, info) => {
-        console.log('FIRST LINE', err, info, user);
         if (err || info || !user) {
+            if (info instanceof TokenExpiredError) {
+                throw new ApiError(httpStatus.UNAUTHORIZED, 'Token expired');
+            }
             throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
         }
         req.user = user;
@@ -28,21 +31,18 @@ const verifyCallback =
 const auth =
     (...requiredRights: string[]) =>
     async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const result = await passport.authenticate(
-                'jwt',
-                { session: false },
-                verifyCallback(req, requiredRights)
-            )(req, res, next);
-            console.log('RESULT', result);
-            if (!result) {
-                throw result;
+        return await passport.authenticate(
+            'jwt',
+            { session: false },
+            async (err: Error, user: any, info: any) => {
+                try {
+                    await verifyCallback(req, requiredRights)(err, user, info);
+                    next();
+                } catch (error) {
+                    next(error);
+                }
             }
-            next(result);
-        } catch (err) {
-            console.log('AUTH ERR', err);
-            throw next(err);
-        }
+        )(req, res, next);
     };
 
 export default auth;

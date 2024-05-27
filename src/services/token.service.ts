@@ -47,7 +47,6 @@ const verifyToken = async (
     type: string
 ): Promise<TokenDocument> => {
     const payload = jwt.verify(token, config.jwt.secret);
-    console.log('PAYLOAD SUB', payload.sub);
     const tokenDoc: TokenDocument | null = await Token.findOne({
         token,
         type,
@@ -128,7 +127,6 @@ const generateResetPasswordToken = async (email: string): Promise<string> => {
 const generateVerifyEmailToken = async (
     user: UserDocument
 ): Promise<string> => {
-    console.log('USER', user);
     const expires = moment().add(
         config.jwt.verifyEmailExpirationMinutes,
         'minutes'

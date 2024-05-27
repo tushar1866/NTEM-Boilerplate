@@ -38,7 +38,7 @@ const refreshAuth = async (refreshToken: string): Promise<object> => {
             refreshToken,
             TokenTypes.REFRESH
         );
-        console.log('REFRESH TOKEN DOC', refreshTokenDoc);
+
         const user = await userService.getUserById(refreshTokenDoc.userId);
         if (user) {
             return await tokenService.generateAuthTokens(user);

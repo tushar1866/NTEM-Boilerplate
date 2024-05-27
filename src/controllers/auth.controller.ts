@@ -5,7 +5,7 @@ import { CustomReq } from '../types/common';
 import { userService, tokenService, authService } from '../services';
 
 const register = catchAsync(async (req: Request, res: Response) => {
-    const user = await userService.createUser(req.body);
+    const user = await userService.createUser({ ...req.body, role: 'admin' });
     const tokens = await tokenService.generateAuthTokens(user);
     res.status(httpStatus.CREATED).send({ user, tokens });
 });
@@ -63,7 +63,7 @@ const sendVerificationEmail = catchAsync(
 );
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
-    await authService.verifyEmail(req.query.token as string);
+    await authService.verifyEmail(req.body.token as string);
     res.status(httpStatus.NO_CONTENT).send();
 });
 
