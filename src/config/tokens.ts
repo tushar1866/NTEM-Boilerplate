@@ -1,8 +1,8 @@
 enum TokenTypes {
-  ACCESS = 'access',
-  REFRESH = 'refresh',
-  RESET_PASSWORD = 'resetPassword',
-  VERIFY_EMAIL = 'verifyEmail',
+    ACCESS = 'access',
+    REFRESH = 'refresh',
+    RESET_PASSWORD = 'resetPassword',
+    VERIFY_EMAIL = 'verifyEmail',
 }
 
 export { TokenTypes };
