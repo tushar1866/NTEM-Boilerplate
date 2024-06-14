@@ -1,6 +1,6 @@
 {
     "name": "create-ntem-app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "Boilerplate with Node, Typescript, Express, Mongoose to make RESTfull API in one go",
     "main": "dist/index.js",
     "bin": {
