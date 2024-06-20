@@ -93,22 +93,27 @@ async function setup() {
         fs.unlinkSync(path.join(appPath, 'CHANGELOG.md'));
         fs.unlinkSync(path.join(appPath, 'CODE_OF_CONDUCT.md'));
         fs.unlinkSync(path.join(appPath, 'CONTRIBUTING.md'));
+        fs.unlinkSync(path.join(appPath, '.env.example'));
         fs.unlinkSync(path.join(appPath, 'bin', 'createntemapp.js'));
         fs.rmdirSync(path.join(appPath, 'bin'));
         if (!useYarn) {
             fs.unlinkSync(path.join(appPath, 'yarn.lock'));
         }
+        const packageJsonPath = path.join(appPath, 'package.json');
+        const packageJson = JSON.parse(
+            fs.readFileSync(packageJsonPath, 'utf-8')
+        );
+        delete packageJson.bin;
+        delete packageJson.repository;
+        fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
         console.log('Installation is now complete!');
         console.log();
-
         console.log('We suggest that you start by typing:');
         console.log(`    cd ${folderName}`);
         console.log(useYarn ? '    yarn dev' : '    npm run dev');
         console.log();
-        console.log(
-            'Start crafting your nodejs app and enjoy all builtin featuers!'
-        );
+        console.log('Start crafting your app!');
         console.log('Check README.md for more info.');
     } catch (error) {
         console.log(error);

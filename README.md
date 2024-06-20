@@ -1,6 +1,7 @@
 # NTEM Boilerplate
 
 ![NTEM Boilerplate](https://img.shields.io/badge/NTEM-Boilerplate-blue)
+![PR Welcome](https://img.shields.io/badge/PR-Welcome-green)
 
 NTEM Boilerplate is a Node.js application boilerplate for creating RESTful APIs using Mongoose, Express, and TypeScript. This boilerplate provides a structured and efficient setup to get your API project up and running quickly.
 
@@ -39,16 +40,16 @@ To create a new application using this boilerplate, run:
 
 ```sh
 npx create-ntem-app <your-app-name>
-cd my-app
-npm install
+cd <your-app-name>
+npm run dev
 ```
 
 Or
 
 ```sh
 npm init create-ntem-app <your-app-name>
-cd my-app
-npm install
+cd <your-app-name>
+npm run dev
 ```
 
 ## Manual initialize
