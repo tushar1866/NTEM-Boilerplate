@@ -8,18 +8,13 @@ const accessTokenExpires = moment().add(
     config.jwt.accessExpirationMinutes,
     'minutes'
 );
-const userOneAccessToken = tokenService.generateToken(
+export const userOneAccessToken = tokenService.generateToken(
     userOne._id,
     accessTokenExpires,
     TokenTypes.ACCESS
 );
-const adminAccessToken = tokenService.generateToken(
+export const adminAccessToken = tokenService.generateToken(
     admin._id,
     accessTokenExpires,
     TokenTypes.ACCESS
 );
-
-export default {
-    userOneAccessToken,
-    adminAccessToken,
-};

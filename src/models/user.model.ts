@@ -12,7 +12,7 @@ import toJSON from './plugins/toJSON.plugin';
 import paginate from './plugins/paginate.plugin';
 
 interface UserDocument extends Document {
-    _id: ObjectId;
+    _id: mongoose.Types.ObjectId;
     name: string;
     email: string;
     password: string;

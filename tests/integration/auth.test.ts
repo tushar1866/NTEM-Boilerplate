@@ -1,5 +1,5 @@
 import request from 'supertest';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import httpStatus from 'http-status';
 import httpMocks from 'node-mocks-http';
 import moment from 'moment';
@@ -18,6 +18,9 @@ import {
     userOneAccessToken,
     adminAccessToken,
 } from '../fixtures/token.fixture';
+import { UserDocument } from '../../src/models/user.model';
+import { CustomReq } from '../../src/types/common';
+import { SentMessageInfo } from 'nodemailer';
 
 setupTestDB();
 
@@ -26,7 +29,7 @@ describe('Auth routes', () => {
         let newUser;
         beforeEach(() => {
             newUser = {
-                name: faker.name.findName(),
+                name: faker.person.fullName(),
                 email: faker.internet.email().toLowerCase(),
                 password: 'password1',
             };
@@ -49,7 +52,7 @@ describe('Auth routes', () => {
 
             const dbUser = await User.findById(res.body.user.id);
             expect(dbUser).toBeDefined();
-            expect(dbUser.password).not.toBe(newUser.password);
+            expect(dbUser?.password).not.toBe(newUser.password);
             expect(dbUser).toMatchObject({
                 name: newUser.name,
                 email: newUser.email,
@@ -79,7 +82,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 400 error if email is already used', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             newUser.email = userOne.email;
 
             await request(app)
@@ -116,7 +119,7 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/login', () => {
         test('should return 200 and login user if email and password match', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const loginCredentials = {
                 email: userOne.email,
                 password: userOne.password,
@@ -165,7 +168,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if password is wrong', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const loginCredentials = {
                 email: userOne.email,
                 password: 'wrongPassword1',
@@ -185,7 +188,7 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/logout', () => {
         test('should return 204 if refresh token is valid', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -221,7 +224,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 404 error if refresh token is not found in the database', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -239,7 +242,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 404 error if refresh token is blacklisted', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -266,7 +269,7 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/refresh-tokens', () => {
         test('should return 200 and new auth tokens if refresh token is valid', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -320,7 +323,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if refresh token is signed using an invalid secret', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -345,7 +348,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if refresh token is not found in the database', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -363,7 +366,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if refresh token is blacklisted', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.refreshExpirationDays,
                 'days'
@@ -388,11 +391,12 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if refresh token is expired', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().subtract(1, 'minutes');
             const refreshToken = tokenService.generateToken(
                 userOne._id,
-                expires
+                expires,
+                TokenTypes.REFRESH
             );
             await tokenService.saveToken(
                 refreshToken,
@@ -433,11 +437,13 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/forgot-password', () => {
         beforeEach(() => {
-            jest.spyOn(emailService.transport, 'sendMail').mockResolvedValue();
+            jest.spyOn(emailService.transport, 'sendMail').mockResolvedValue(
+                Promise.resolve({} as SentMessageInfo)
+            );
         });
 
         test('should return 204 and send reset password email to the user', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const sendResetPasswordEmailSpy = jest.spyOn(
                 emailService,
                 'sendResetPasswordEmail'
@@ -462,7 +468,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 400 if email is missing', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
 
             await request(app)
                 .post('/v1/auth/forgot-password')
@@ -480,7 +486,7 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/reset-password', () => {
         test('should return 204 and reset the password', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.resetPasswordExpirationMinutes,
                 'minutes'
@@ -504,9 +510,9 @@ describe('Auth routes', () => {
                 .expect(httpStatus.NO_CONTENT);
 
             const dbUser = await User.findById(userOne._id);
-            const isPasswordMatch = await bcrypt.compare(
+            const isPasswordMatch = bcrypt.compare(
                 'password2',
-                dbUser.password
+                dbUser?.password || ''
             );
             expect(isPasswordMatch).toBe(true);
 
@@ -518,7 +524,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 400 if reset password token is missing', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
 
             await request(app)
                 .post('/v1/auth/reset-password')
@@ -527,7 +533,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 if reset password token is blacklisted', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.resetPasswordExpirationMinutes,
                 'minutes'
@@ -553,7 +559,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 if reset password token is expired', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().subtract(1, 'minutes');
             const resetPasswordToken = tokenService.generateToken(
                 userOne._id,
@@ -599,7 +605,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 400 if password is missing or invalid', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.resetPasswordExpirationMinutes,
                 'minutes'
@@ -643,11 +649,13 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/send-verification-email', () => {
         beforeEach(() => {
-            jest.spyOn(emailService.transport, 'sendMail').mockResolvedValue();
+            jest.spyOn(emailService.transport, 'sendMail').mockResolvedValue(
+                Promise.resolve({} as SentMessageInfo)
+            );
         });
 
         test('should return 204 and send verification email to the user', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const sendVerificationEmailSpy = jest.spyOn(
                 emailService,
                 'sendVerificationEmail'
@@ -672,7 +680,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 error if access token is missing', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
 
             await request(app)
                 .post('/v1/auth/send-verification-email')
@@ -683,14 +691,15 @@ describe('Auth routes', () => {
 
     describe('POST /v1/auth/verify-email', () => {
         test('should return 204 and verify the email', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.verifyEmailExpirationMinutes,
                 'minutes'
             );
             const verifyEmailToken = tokenService.generateToken(
                 userOne._id,
-                expires
+                expires,
+                TokenTypes.VERIFY_EMAIL
             );
             await tokenService.saveToken(
                 verifyEmailToken,
@@ -707,7 +716,7 @@ describe('Auth routes', () => {
 
             const dbUser = await User.findById(userOne._id);
 
-            expect(dbUser.isEmailVerified).toBe(true);
+            expect(dbUser?.isEmailVerified).toBe(true);
 
             const dbVerifyEmailToken = await Token.countDocuments({
                 user: userOne._id,
@@ -717,7 +726,7 @@ describe('Auth routes', () => {
         });
 
         test('should return 400 if verify email token is missing', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
 
             await request(app)
                 .post('/v1/auth/verify-email')
@@ -726,14 +735,15 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 if verify email token is blacklisted', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().add(
                 config.jwt.verifyEmailExpirationMinutes,
                 'minutes'
             );
             const verifyEmailToken = tokenService.generateToken(
                 userOne._id,
-                expires
+                expires,
+                TokenTypes.VERIFY_EMAIL
             );
             await tokenService.saveToken(
                 verifyEmailToken,
@@ -751,11 +761,12 @@ describe('Auth routes', () => {
         });
 
         test('should return 401 if verify email token is expired', async () => {
-            await insertUsers([userOne]);
+            await insertUsers([userOne as UserDocument]);
             const expires = moment().subtract(1, 'minutes');
             const verifyEmailToken = tokenService.generateToken(
                 userOne._id,
-                expires
+                expires,
+                TokenTypes.VERIFY_EMAIL
             );
             await tokenService.saveToken(
                 verifyEmailToken,
@@ -778,7 +789,8 @@ describe('Auth routes', () => {
             );
             const verifyEmailToken = tokenService.generateToken(
                 userOne._id,
-                expires
+                expires,
+                TokenTypes.VERIFY_EMAIL
             );
             await tokenService.saveToken(
                 verifyEmailToken,
@@ -798,8 +810,8 @@ describe('Auth routes', () => {
 
 describe('Auth middleware', () => {
     test('should call next with no errors if access token is valid', async () => {
-        await insertUsers([userOne]);
-        const req = httpMocks.createRequest({
+        await insertUsers([userOne as UserDocument]);
+        const req: CustomReq = httpMocks.createRequest({
             headers: { Authorization: `Bearer ${userOneAccessToken}` },
         });
         const next = jest.fn();
@@ -807,11 +819,11 @@ describe('Auth middleware', () => {
         await auth()(req, httpMocks.createResponse(), next);
 
         expect(next).toHaveBeenCalledWith();
-        expect(req.user._id).toEqual(userOne._id);
+        expect(req?.user?._id).toEqual(userOne._id);
     });
 
     test('should call next with unauthorized error if access token is not found in header', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const req = httpMocks.createRequest();
         const next = jest.fn();
 
@@ -827,7 +839,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with unauthorized error if access token is not a valid jwt token', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const req = httpMocks.createRequest({
             headers: { Authorization: 'Bearer randomToken' },
         });
@@ -845,7 +857,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with unauthorized error if the token is not an access token', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const expires = moment().add(
             config.jwt.accessExpirationMinutes,
             'minutes'
@@ -872,7 +884,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with unauthorized error if access token is generated with an invalid secret', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const expires = moment().add(
             config.jwt.accessExpirationMinutes,
             'minutes'
@@ -900,7 +912,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with unauthorized error if access token is expired', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const expires = moment().subtract(1, 'minutes');
         const accessToken = tokenService.generateToken(
             userOne._id,
@@ -941,7 +953,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with forbidden error if user does not have required rights and userId is not in params', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const req = httpMocks.createRequest({
             headers: { Authorization: `Bearer ${userOneAccessToken}` },
         });
@@ -959,7 +971,7 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with no errors if user does not have required rights but userId is in params', async () => {
-        await insertUsers([userOne]);
+        await insertUsers([userOne as UserDocument]);
         const req = httpMocks.createRequest({
             headers: { Authorization: `Bearer ${userOneAccessToken}` },
             params: { userId: userOne._id.toHexString() },
@@ -972,14 +984,14 @@ describe('Auth middleware', () => {
     });
 
     test('should call next with no errors if user has required rights', async () => {
-        await insertUsers([admin]);
+        await insertUsers([admin as UserDocument]);
         const req = httpMocks.createRequest({
             headers: { Authorization: `Bearer ${adminAccessToken}` },
             params: { userId: userOne._id.toHexString() },
         });
         const next = jest.fn();
 
-        await auth(...roleRights.get('admin'))(
+        await auth(...(roleRights.get('admin') || ''))(
             req,
             httpMocks.createResponse(),
             next

@@ -6,12 +6,12 @@ import userService from './user.service';
 import { Token } from '../models';
 import ApiError from '../utils/ApiError';
 import { TokenTypes } from '../config/tokens';
-import { ObjectId } from 'mongoose';
+import mongoose from 'mongoose';
 import { TokenDocument } from '../models/token.model';
 import { UserDocument } from '../models/user.model';
 
 const generateToken = (
-    userId: ObjectId,
+    userId: mongoose.Types.ObjectId,
     expires: Moment,
     type: string,
     secret: string = config.jwt.secret
@@ -27,7 +27,7 @@ const generateToken = (
 
 const saveToken = async (
     token: string,
-    userId: ObjectId,
+    userId: mongoose.Types.ObjectId,
     expires: Moment,
     type: string,
     blacklisted: boolean = false
