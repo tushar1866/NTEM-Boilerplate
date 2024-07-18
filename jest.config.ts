@@ -1,4 +1,5 @@
-export default {
+import type { Config } from '@jest/types';
+const config: Config.InitialOptions = {
     testEnvironment: 'node',
     testEnvironmentOptions: {
         NODE_ENV: 'test',
@@ -12,3 +13,4 @@ export default {
     ],
     coverageReporters: ['text', 'lcov', 'clover', 'html'],
 };
+export default config;

@@ -18,6 +18,13 @@ router
         validate(userValidation.getUsers),
         userController.getUsers
     );
+router
+    .route('/search')
+    .get(
+        auth('getUsers'),
+        validate(userValidation.getUsers),
+        userController.getUsers
+    );
 
 router
     .route('/:userId')

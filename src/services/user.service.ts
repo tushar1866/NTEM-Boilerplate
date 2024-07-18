@@ -56,6 +56,13 @@ const deleteUserById = async (userId: string | ObjectId) => {
     await user.deleteOne();
     return user;
 };
+const getUsersAggragation = async (
+    filter: { [key: string]: any },
+    _options: { [key: string]: any }
+) => {
+    const result = await User.aggregate([{ $search: filter }]);
+    return result;
+};
 
 export default {
     createUser,
@@ -64,4 +71,5 @@ export default {
     getUserByEmail,
     updateUserById,
     deleteUserById,
+    getUsersAggragation,
 };

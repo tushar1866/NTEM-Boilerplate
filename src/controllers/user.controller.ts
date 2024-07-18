@@ -16,6 +16,12 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     const result = await userService.queryUsers(filter, options);
     res.send(result);
 });
+const searchUsers = catchAsync(async (req: Request, res: Response) => {
+    const filter = pick(req.query, ['name', 'role']);
+    const options = pick(req.query, ['sortBy', 'limit', 'page']);
+    const result = await userService.getUsersAggragation(filter, options);
+    res.send(result);
+});
 
 const getUser = catchAsync(async (req: Request, res: Response) => {
     const user = await userService.getUserById(req.params.userId);
@@ -39,6 +45,7 @@ export default {
     createUser,
     getUsers,
     getUser,
+    searchUsers,
     updateUser,
     deleteUser,
 };
